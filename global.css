@@ -1,0 +1,84 @@
+@import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;700&family=DM+Mono:wght@400;500&family=Source+Code+Pro:ital,wght@0,400;0,500;0,600;0,900;1,400;1,500;1,600;1,700;1,900&family=Ubuntu:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=LXGW+WenKai+Mono+TC&family=Sono:wght@200..800&family=Workbench&display=swap');
+
+:root {
+    --primary: rgb(20, 20, 20);
+    --secondary: rgb(63, 63, 63);
+    --tertiary: rgb(40, 40, 40);
+    --text: rgb(245, 245, 245);
+    --highlighted: rgb(245, 245, 245);
+}
+
+
+body {
+	background-color: var(--primary);
+    /* overflow-x: hidden; */
+    line-height: 1;
+}
+
+::selection {
+    color: var(--primary);
+    background: var(--highlighted);
+}
+
+::-moz-selection {
+    color: var(--primary);
+    background: var(--highlighted);
+}
+
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+-webkit-appearance: none;
+margin: 0;
+}
+
+button:focus-visible, button:focus-within, button:focus {
+    outline: none !important;
+}
+
+/* Firefox */
+input[type=number] {
+-moz-appearance: textfield;
+}
+
+input:focus-visible {
+    outline: none;
+}
+
+/* Scrollbar */
+* {
+    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;  /* IE and Edge */
+    -webkit-tap-highlight-color:  rgba(255, 255, 255, 0); 
+}
+
+/* width */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: transparent; 
+}
+ 
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: rgb(100, 100, 100); 
+  border-radius: 999px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(245, 245, 245); 
+}
+
+.genius-icon {
+    background-image: url('/media/genius-icon.png');
+    height: 1rem;
+    width: 1rem;
+    background-repeat: no-repeat;
+    background-size: contain;
+}
