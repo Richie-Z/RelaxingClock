@@ -6,6 +6,7 @@
     import Action from "../../elements/settings/Buttons/Action.svelte";
     import Booleans from "../../elements/settings/Buttons/Booleans.svelte";
     import { onMount, tick } from "svelte";
+    import { writable } from "svelte/store";
     import moment, { Moment } from "moment";
     import momentDurationFormatSetup from "moment-duration-format";
     import { fly } from "svelte/transition";
@@ -13,9 +14,18 @@
     import { alarmIsRinging, tips } from "../../../stores/globalState";
     import { notifications } from "../../../stores/notifications";
     import { shakeElement } from "../../../utils/utils";
-    import { alarmTime, clockFormat, clockStyleClass, timerTime } from "../../../stores/storedSettings";
+    import {
+        alarmTime,
+        clockFormat,
+        clockStyleClass,
+        timerTime,
+    } from "../../../stores/storedSettings";
     import { canBeSummoned, shortcuts } from "../../../stores/rooster";
-    import { ring, clearAlarmMemory, clearTimerMemory } from "../../../handlers/alarm";
+    import {
+        ring,
+        clearAlarmMemory,
+        clearTimerMemory,
+    } from "../../../handlers/alarm";
     import { showClockDuringTimer } from "../../../stores/storedSettings";
     import NestedBox from "../../elements/settings/NestedBox.svelte";
 
@@ -26,6 +36,7 @@
     let seconds: string;
     let alarm: Moment = moment();
     let creationBox: HTMLElement;
+    let isInterval = writable(true);
 
     $: format = $clockFormat === "24h" ? "HH:mm:ss" : "h:mm:ss a";
     $: primaryBoxTitle =
@@ -40,16 +51,17 @@
     $: periodicCheck($time);
 
     function periodicCheck(time: Moment, force = false) {
-        
-        if (force || (time.unix() === $timerTime)) {
+        if (force || time.unix() === $timerTime) {
             if (
                 !$alarmIsRinging &&
                 time.unix() >= $timerTime &&
                 time.unix() - $timerTime < minutesPassedCheck * 60
             ) {
-                ring('timer');
+                ring("timer");
             } else if (
-                moment($timerTime, "X").isSameOrBefore(moment().subtract(minutesPassedCheck, "m"))
+                moment($timerTime, "X").isSameOrBefore(
+                    moment().subtract(minutesPassedCheck, "m"),
+                )
             ) {
                 console.log("removing old timers");
                 clearTimerMemory();
@@ -62,7 +74,9 @@
             event.code.match(/enter/i) ||
             (event.key.length === 1 &&
                 (!event.code.match(/\d/) ||
-                    (hours.length > 1 && minutes.length > 1 && seconds.length > 1)))
+                    (hours.length > 1 &&
+                        minutes.length > 1 &&
+                        seconds.length > 1)))
         ) {
             event.preventDefault();
         }
@@ -77,11 +91,12 @@
     }
 
     async function openCreationBox() {
+        const interval = $isInterval;
         alarm = moment();
 
-        hours = '00'
-        minutes = '00'
-        seconds = '00'
+        hours = interval ? "00" : alarm.hours().toString();
+        minutes = interval ? "00" : alarm.minutes().toString();
+        seconds = "00";
 
         canBeSummoned.set(false);
         creationBoxOpened = true;
@@ -96,10 +111,18 @@
     }
 
     function saveInput() {
+        const interval = $isInterval;
+
         const duration = moment.duration({
-            hours: parseInt(hours),
-            minutes: parseInt(minutes),
-            seconds: parseInt(seconds),
+            hours: interval
+                ? parseInt(hours)
+                : parseInt(hours) - moment().hours(),
+            minutes: interval
+                ? parseInt(minutes)
+                : parseInt(minutes) - moment().minutes(),
+            seconds: interval
+                ? parseInt(seconds)
+                : parseInt(seconds) - moment().seconds(),
         });
 
         alarm = moment().add(duration);
@@ -121,9 +144,11 @@
 
     function createAlarm(timerTitle?: string) {
         clearTimerMemory();
+
         timerTime.set(alarm.unix());
 
-        if (timerTitle && timerTitle.length > 0) localStorage.setItem("timerTitle", timerTitle);
+        if (timerTitle && timerTitle.length > 0)
+            localStorage.setItem("timerTitle", timerTitle);
     }
 
     function closeCreationBox() {
@@ -135,6 +160,14 @@
 
     function dismissAlarm() {
         clearTimerMemory();
+    }
+
+    function changeIsInterval(e) {
+        isInterval.set(e.detail);
+        const interval = $isInterval;
+
+        hours = interval ? "00" : moment().hours().toString();
+        minutes = interval ? "00" : moment().minutes().toString();
     }
 
     onMount(() => {
@@ -149,31 +182,75 @@
         on:keydown={handleShortcuts}
         transition:fly={{ y: 100, duration: 300 }}
     >
-        <div class="py-4 px-10 h-auto font-primary bg-secondary text-primary rounded-2xl shadow-box">
-            <h2 class="text-4xl font-bold text-center font-title w-full">Set the timer</h2>
+        <div
+            class="py-4 px-10 h-auto font-primary bg-secondary text-primary rounded-2xl shadow-box"
+        >
+            <h2 class="text-4xl font-bold text-center font-title w-full">
+                Set the timer
+            </h2>
             <div class="my-2 flex flex-col justify-center">
-                <div class="text-8xl p-2 mt-4 mb-1 text-center font-bold {$clockStyleClass}">
-                    <span
-                        id="timer-h-input"
-                        bind:innerHTML={hours}
-                        contenteditable
-                        class="time-input"
-                        on:keydown={handleAlarmKeyDown}
-                    >
-                    </span><span class="opacity-70">:</span><span
-                        bind:innerHTML={minutes}
-                        contenteditable
-                        class="time-input"
-                        on:keydown={handleAlarmKeyDown}
-                    >
-                    </span><span class="opacity-70">:</span><span
-                        id="timer-s-input"
-                        bind:innerHTML={seconds}
-                        contenteditable
-                        class="time-input"
-                        on:keydown={handleAlarmKeyDown}
-                    >
-                    </span>
+                <div
+                    class="text-8xl p-2 mt-4 mb-1 text-center font-bold {$clockStyleClass}"
+                >
+                    {#if isInterval}
+                        <div>
+                            <span
+                                id="timer-h-input"
+                                bind:innerHTML={hours}
+                                contenteditable
+                                class="time-input"
+                                on:keydown={handleAlarmKeyDown}
+                            >
+                            </span><span class="opacity-70">:</span><span
+                                bind:innerHTML={minutes}
+                                contenteditable
+                                class="time-input"
+                                on:keydown={handleAlarmKeyDown}
+                            >
+                            </span><span class="opacity-70">:</span><span
+                                id="timer-s-input"
+                                bind:innerHTML={seconds}
+                                contenteditable
+                                class="time-input"
+                                on:keydown={handleAlarmKeyDown}
+                            >
+                            </span>
+                        </div>
+                    {:else}
+                        <div>
+                            <span
+                                id="timer-h-input"
+                                bind:innerHTML={hours}
+                                contenteditable
+                                class="time-input"
+                                on:keydown={handleAlarmKeyDown}
+                            >
+                            </span><span class="opacity-70">:</span><span
+                                bind:innerHTML={minutes}
+                                contenteditable
+                                class="time-input"
+                                on:keydown={handleAlarmKeyDown}
+                            >
+                            </span><span class="opacity-70">:</span><span
+                                id="timer-s-input"
+                                bind:innerHTML={seconds}
+                                contenteditable
+                                class="time-input"
+                                on:keydown={handleAlarmKeyDown}
+                            >
+                            </span>
+                        </div>
+                    {/if}
+                    <div class="text-sm mt-1">
+                        <div class="inline-block">
+                            <Booleans
+                                state={$isInterval}
+                                states={["Int.", "Time"]}
+                                label=""
+                                on:change={changeIsInterval}
+                            />
+                        </div>
+                    </div>
                 </div>
                 <div class="inline-block m-auto">
                     <div class="my-2">
@@ -187,7 +264,9 @@
                 </div>
             </div>
             <div class="flex w-full justify-center mt-4">
-                <span class="mx-1"><Action label="Create" on:click={saveInput} /></span>
+                <span class="mx-1"
+                    ><Action label="Create" on:click={saveInput} /></span
+                >
                 <span class="mx-1"
                     ><Action
                         label="Cancel"
@@ -204,7 +283,10 @@
 <SettingsBox id="timer">
     <Title title="Timer">
         <TitleIcon>
-            <i class="lnr lnr-history bg-center settings-icon" style="color: #f400ff;"></i>
+            <i
+                class="lnr lnr-history bg-center settings-icon"
+                style="color: #f400ff;"
+            ></i>
         </TitleIcon>
     </Title>
     <PrimaryBox
@@ -227,7 +309,11 @@
         ></Action>
     </PrimaryBox>
     <NestedBox bordered label="Keep clock visible during timer">
-        <Booleans state={$showClockDuringTimer} label={"don't change main clock"} on:change={(e) => showClockDuringTimer.set(e.detail)} />
+        <Booleans
+            state={$showClockDuringTimer}
+            label={"don't change main clock"}
+            on:change={(e) => showClockDuringTimer.set(e.detail)}
+        />
     </NestedBox>
 </SettingsBox>
 
