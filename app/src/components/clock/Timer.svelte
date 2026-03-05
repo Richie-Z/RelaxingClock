@@ -73,9 +73,9 @@
 {:else}
     <div
         class="relative opacity-60 text-primary text-lg lg:text-6xl
-           font-medium transition-opacity duration-300 select-none pointer-events-none m-5"
+           font-medium transition-opacity duration-300 select-none pointer-events-none m-5 {$clockStyleClass}"
     >
-        <p class="text-lg text-center">
+        <p class="text-lg text-center font-title">
             <span style={`color: ${$accentColor};`}>Re</span>maining:
         </p>
         <div class="flex flex-row items-center space-x-1">
